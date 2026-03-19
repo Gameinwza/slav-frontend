@@ -173,7 +173,7 @@ export default function useSocket() {
     // derived
     isMyTurn, hasPassed,
     // actions
-    join, startGame, playAgain, pass, confirmPlay, toggleCard,
+    join, leaveRoom, startGame, playAgain, pass, confirmPlay, toggleCard,
     // helpers
     canCardPlay, isValidMove, getPlayType,
   }
