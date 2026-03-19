@@ -1,0 +1,72 @@
+/* ── Casino Green Theme ── */
+:root {
+  --felt:        #1a5c38;
+  --felt-dark:   #0f3d25;
+  --felt-light:  #226b44;
+  --felt-border: #0a2818;
+  --gold:        #c9a84c;
+  --gold-light:  #e8c97a;
+  --gold-dark:   #9a7530;
+  --card-bg:     #faf7f0;
+  --card-border: #d4c5a0;
+  --card-shadow: rgba(0,0,0,0.45);
+  --red:         #c0392b;
+  --black:       #1a1a1a;
+  --text-on-felt:#e8f5ee;
+  --text-muted:  #7ab893;
+  --chip-green:  #27ae60;
+  --chip-red:    #e74c3c;
+  --chip-black:  #2c3e50;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--felt-dark);
+  color: var(--text-on-felt);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* felt texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,0.015) 2px,
+      rgba(255,255,255,0.015) 4px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root { position: relative; z-index: 1; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--felt-dark); }
+::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
+
+/* animations */
+@keyframes dealIn {
+  from { opacity: 0; transform: translateY(-40px) rotate(-5deg); }
+  to   { opacity: 1; transform: translateY(0) rotate(0); }
+}
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(201,168,76,0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
