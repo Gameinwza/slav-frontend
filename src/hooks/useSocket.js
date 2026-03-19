@@ -98,10 +98,12 @@ export default function useSocket() {
   }, [notify])
 
   // ── actions ────────────────────────────────────────────
-  const join = useCallback((roomId, nickname) => {
-    roomRef.current = roomId
-    socket.emit('joinRoom', { roomId, nickname })
-  }, [])
+  const join = useCallback((roomId, nickname, onSuccess, onError) => {
+  roomRef.current = roomId
+  socket.emit('joinRoom', { roomId, nickname })
+  socket.once('players', () => onSuccess?.())   // ← ถ้า join สำเร็จ
+  socket.once('error',   (msg) => onError?.(msg)) // ← ถ้าห้องเต็ม/error
+}, [])
 
   const startGame = useCallback(() => {
     socket.emit('startGame', roomRef.current)
@@ -120,6 +122,18 @@ export default function useSocket() {
     socket.emit('playCard', { roomId: roomRef.current, cards })
     setSelected([])
   }, [])
+
+  const leaveRoom = useCallback(() => {
+  socket.emit('leaveRoom', roomRef.current)
+  roomRef.current = ''
+  setPlayers([])
+  setHand([])
+  setGameState(null)
+  setRankingData(null)
+  setSwapData(null)
+  setGameAborted('')
+  setSelected([])
+}, [])
 
   // ── card selection ─────────────────────────────────────
   const toggleCard = useCallback((card) => {

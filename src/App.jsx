@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import useSocket from './hooks/useSocket'
 import Hand from './components/Hand'
 import Table from './components/Table'
@@ -10,22 +10,43 @@ import SwapModal from './components/modals/SwapModal'
 import './App.css'
 
 export default function App() {
-  const [nickname, setNickname] = useState('')
+  const [nickname,  setNickname]  = useState('')
   const [roomInput, setRoomInput] = useState('')
-  const [joined, setJoined] = useState(false)
+  const [joined,    setJoined]    = useState(false)
+  const [joinError, setJoinError] = useState('')
+  const [showSwap,  setShowSwap]  = useState(false)
 
   const {
     connected, myId, players, hand, gameState,
     selected, notification, rankingData, swapData, gameAborted,
     isMyTurn, hasPassed,
-    join, startGame, playAgain, pass, confirmPlay, toggleCard,
+    join, leaveRoom, startGame, playAgain, pass, confirmPlay, toggleCard,
     canCardPlay, getPlayType,
   } = useSocket()
 
+  // เปิด SwapModal อัตโนมัติเมื่อได้รับข้อมูล
+  useEffect(() => {
+    if (swapData) setShowSwap(true)
+  }, [swapData])
+
   function handleJoin() {
     if (!nickname.trim() || !roomInput.trim()) return
-    join(roomInput.trim(), nickname.trim())
-    setJoined(true)
+    setJoinError('')
+    join(
+      roomInput.trim(),
+      nickname.trim(),
+      () => setJoined(true),
+      (msg) => setJoinError(msg)
+    )
+  }
+
+  function handleLeave() {
+    leaveRoom()
+    setJoined(false)
+    setNickname('')
+    setRoomInput('')
+    setJoinError('')
+    setShowSwap(false)
   }
 
   // ── Lobby ──────────────────────────────────────────────
@@ -57,6 +78,9 @@ export default function App() {
             <button className="btn btn--confirm btn--full" onClick={handleJoin}>
               เข้าร่วม
             </button>
+            {joinError && (
+              <div className="banner--warn">{joinError}</div>
+            )}
           </div>
 
           <div className={`lobby__status ${connected ? 'lobby__status--ok' : ''}`}>
@@ -80,32 +104,42 @@ export default function App() {
   return (
     <div className={`game ${isMyTurn && !hasPassed ? 'game--my-turn' : ''}`}>
 
-      {/* notification toast */}
-      {notification && (
-        <div className="toast">{notification}</div>
-      )}
+      {notification && <div className="toast">{notification}</div>}
 
-      {/* aborted banner */}
+      {/* aborted banner + ปุ่มกลับ */}
       {gameAborted && (
-        <div className="banner banner--warn">{gameAborted}</div>
+        <div className="banner banner--warn">
+          {gameAborted}
+          <button
+            className="btn btn--pass"
+            onClick={handleLeave}
+            style={{ marginLeft: '12px', fontSize: '12px', padding: '4px 10px' }}
+          >
+            กลับหน้าหลัก
+          </button>
+        </div>
       )}
 
-      {/* header */}
+      {/* header + ปุ่มออก */}
       <header className="game__header">
         <span className="game__logo">🃏 Slave</span>
         <span className="game__room">ห้อง: {roomInput}</span>
+        <button
+          className="btn btn--pass"
+          onClick={handleLeave}
+          style={{ fontSize: '12px', padding: '4px 10px' }}
+        >
+          ออก
+        </button>
         <span className={`game__conn ${connected ? 'game__conn--ok' : ''}`}>
           {connected ? '●' : '○'}
         </span>
       </header>
 
-      {/* players */}
       <PlayerBar players={players} gameState={gameState} myId={myId} />
 
-      {/* turn status */}
       <div className="turn-status">{turnStatus}</div>
 
-      {/* timer */}
       <TimerBar
         timeoutMs={gameState?.timeoutMs}
         isMyTurn={isMyTurn}
@@ -113,10 +147,8 @@ export default function App() {
         gameState={gameState}
       />
 
-      {/* table */}
       <Table table={table} getPlayType={getPlayType} />
 
-      {/* hand */}
       <section className="game__hand-section">
         <div className="game__hand-label">
           ไพ่ในมือ <span className="game__hand-count">{hand.length} ใบ</span>
@@ -130,7 +162,6 @@ export default function App() {
         />
       </section>
 
-      {/* actions */}
       <ActionBar
         selected={selected}
         isMyTurn={isMyTurn}
@@ -141,32 +172,24 @@ export default function App() {
         onPass={pass}
       />
 
-      {/* start button (ก่อนเกมเริ่ม) */}
       {!gameState && !gameAborted && players.length > 0 && (
         <div className="pregame">
-          <p className="pregame__count">
-            ผู้เล่น {players.length}/4 คน
-          </p>
-          {players.length === 4 && (
-            <button className="btn btn--confirm btn--lg" onClick={startGame}>
-              🃏 เริ่มเกม
-            </button>
-          )}
-          {players.length < 4 && (
-            <p className="pregame__waiting">รอผู้เล่นอีก {4 - players.length} คน...</p>
-          )}
+          <p className="pregame__count">ผู้เล่น {players.length}/4 คน</p>
+          {players.length === 4
+            ? <button className="btn btn--confirm btn--lg" onClick={startGame}>🃏 เริ่มเกม</button>
+            : <p className="pregame__waiting">รอผู้เล่นอีก {4 - players.length} คน...</p>
+          }
         </div>
       )}
 
-      {/* modals */}
       <RankingModal
         ranking={rankingData}
         onPlayAgain={playAgain}
-        onClose={() => {}}
+        onClose={() => setJoined(false)}
       />
       <SwapModal
-        swapData={swapData}
-        onClose={() => {}}
+        swapData={showSwap ? swapData : null}
+        onClose={() => setShowSwap(false)}
       />
     </div>
   )
